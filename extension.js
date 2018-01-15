@@ -4,6 +4,7 @@ const kill = require('tree-kill');
 const fs = require('fs');
 const path = require('path');
 const strip = require('strip-json-comments');
+const resolver = require('./resolver');
 
 const statusBarItems = {};
 const exampleJson = `{
@@ -75,6 +76,7 @@ function activate(context) {
 		const channel = vscode.window.createOutputChannel('Commandbar');
 		let commandIndex = 0;
 		let settings;
+		let terminal;
 		const refreshCommands = function refreshCommands() {
 			Object.keys(statusBarItems).forEach((key) => {
 				statusBarItems[key].hide();
@@ -96,6 +98,7 @@ function activate(context) {
 								const skipSwitchToOutput = command.skipSwitchToOutput === undefined ? settings.skipSwitchToOutput : command.skipSwitchToOutput;
 								const skipTerminateQuickPick = command.skipTerminateQuickPick === undefined ? settings.skipTerminateQuickPick : command.skipTerminateQuickPick;
 								const skipErrorMessage = command.skipErrorMessage === undefined ? settings.skipErrorMessage : command.skipErrorMessage;
+								const runInTerminal = command.runInTerminal === undefined ? settings.runInTerminal: command.runInTerminal;
 
 								statusBarItem.text = command.text;
 								statusBarItem.tooltip = command.tooltip;
@@ -113,6 +116,8 @@ function activate(context) {
 								const vsCommand = vscode.commands.registerCommand(commandId, () => {
 									const executeCommand = function executeCommand() {
 										const exec = function exec(commandContent) {
+											commandContent = resolver.variableSubstitutionResolver(commandContent);
+
 											const process = childProcess.exec(commandContent, { cwd: vscode.workspace.rootPath, maxBuffer: 1073741824 }, (err) => {
 												statusBarItem.text = command.text;
 												statusBarItem.process = undefined;
@@ -128,10 +133,9 @@ function activate(context) {
 											process.stderr.on('data', data => channel.append(data));
 											statusBarItem.process = process;
 										}
-
 										if(command.commandType === 'script') {
 											exec(`npm run ${command.command}`);
-										} if (command.commandType === 'palette') {
+										} else if (command.commandType === 'palette') {
 											const executeNext = function executeNext(palette, index) {
 												vscode.commands.executeCommand(palettes[index]).then(() => {
 													index += 1;
@@ -175,6 +179,14 @@ function activate(context) {
 												openFile(files[0]);
 											}
 										}
+									} else if(runInTerminal && (!command.commandType || command.commandType === 'exec')){
+										if(!terminal){
+											terminal = vscode.window.createTerminal("CommandBar");
+										}
+										let commandContent = `${command.command}`;
+										commandContent = resolver.variableSubstitutionResolver(commandContent);
+										terminal.show(true);
+										terminal.sendText(commandContent);
 									} else {
 										if(statusBarItem.process) {
 											if(!skipTerminateQuickPick) {
@@ -236,6 +248,12 @@ function activate(context) {
 
 			});
 		}
+		vscode.window.onDidCloseTerminal( (event)=>{
+			if(event.name ==="CommandBar"){
+				terminal.dispose();
+				terminal = undefined;
+			}
+		});
 		vscode.window.onDidChangeActiveTextEditor((event) => {
 			if(settings) {
 				settings.commands.forEach(command => {

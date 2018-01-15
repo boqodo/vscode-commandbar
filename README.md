@@ -92,6 +92,16 @@ Command options
 }
 ```
 
+## 新增内容
+
+1.在命令中添加`${file}`等占位，根据当前环境替换值
+
+  > 由于需要 运行当前打开的文件，所以添加了占位替换
+
+2.设置(setting) 中添加`runInTerminal`，在命令行中直接运行命令
+
+  > 由于electron项目在子进程中启动报错，所以修改成支持命令行运行
+
 ## Change Log
 
 [Change Log](CHANGELOG.md)

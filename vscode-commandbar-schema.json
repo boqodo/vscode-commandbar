@@ -17,6 +17,11 @@
 			"description": "Do not popup Error message.",
 			"default": false
 		},
+		"runInTerminal":{
+			"type": "boolean",
+			"description": "Run command in Terminal.",
+			"default": false
+		},
 		"commands": {
 			"type": "array",
 			"description": "An array of commands",
@@ -78,6 +83,11 @@
 					"skipErrorMessage": {
 						"type": "boolean",
 						"description": "Do not popup Error message.",
+						"default": false
+					},
+					"runInTerminal":{
+						"type": "boolean",
+						"description": "Run command in Terminal.",
 						"default": false
 					}
 				}
