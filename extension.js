@@ -186,7 +186,14 @@ function activate(context) {
 										let commandContent = `${command.command}`;
 										commandContent = resolver.variableSubstitutionResolver(commandContent);
 										terminal.show(true);
-										terminal.sendText(commandContent);
+										if(commandContent.indexOf('&&')>-1){
+											let commands = commandContent.split('&&')
+											commands.forEach(c=>{
+												terminal.sendText(c);
+											})
+										}else{
+											terminal.sendText(commandContent);
+										}
 									} else {
 										if(statusBarItem.process) {
 											if(!skipTerminateQuickPick) {
